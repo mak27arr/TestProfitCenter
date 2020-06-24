@@ -9,9 +9,8 @@ namespace TestProfitCenterServer
 {
     class FinServer
     {
-        static int _mcastPort = 3000;
+        static int _mcastPort = 11000;
         static Socket mcastSocket;
-        private IPAddress _addres;
         private IPAddress _mcastAddress;
 
         private object locker = new object();
@@ -21,9 +20,8 @@ namespace TestProfitCenterServer
         /// Init server
         /// </summary>
         /// <param name="address">Server ip adress like localhost or 0.0.0.0</param>
-        public FinServer(IPAddress address,IPAddress mcastAddress,int mcastPort=3000)
+        public FinServer(IPAddress mcastAddress,int mcastPort=11000)
         {
-            _addres = address;
             _mcastAddress = mcastAddress;
             _mcastPort = mcastPort;
         }
@@ -72,14 +70,14 @@ namespace TestProfitCenterServer
                 mcastSocket = new Socket(AddressFamily.InterNetwork,
                                          SocketType.Dgram,
                                          ProtocolType.Udp);
-                IPEndPoint IPlocal = new IPEndPoint(_addres, 0);
-                mcastSocket.Bind(IPlocal);
-                MulticastOption mcastOption;
-                mcastOption = new MulticastOption(_mcastAddress, _addres);
                 mcastSocket.SetSocketOption(SocketOptionLevel.IP,
-                                        SocketOptionName.AddMembership,
-                                        mcastOption);
-            }catch(Exception ex)
+                    SocketOptionName.AddMembership, new MulticastOption(_mcastAddress));
+                mcastSocket.SetSocketOption(SocketOptionLevel.IP,
+                    SocketOptionName.MulticastTimeToLive, 3);
+                IPEndPoint IPlocal_m = new IPEndPoint(_mcastAddress, _mcastPort);
+                mcastSocket.Connect(IPlocal_m);
+            }
+            catch(Exception ex)
             {
                 Console.WriteLine("\n" + ex.ToString());
             }
@@ -89,9 +87,8 @@ namespace TestProfitCenterServer
             IPEndPoint endPoint;
             try
             {
-                //Send multicast packets to the listener.
-                endPoint = new IPEndPoint(_mcastAddress, _mcastPort);
-                mcastSocket.SendTo(ASCIIEncoding.ASCII.GetBytes(message), endPoint);
+                var byte_size = ASCIIEncoding.UTF32.GetBytes(message);
+                mcastSocket.Send(byte_size);
             }
             catch (Exception e)
             {

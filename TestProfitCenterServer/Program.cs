@@ -8,20 +8,7 @@ namespace TestProfitCenter
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Enter server IP(0.0.0.0)");
-            IPAddress localIPAddr;
             int count = 0;
-            while (!IPAddress.TryParse(Console.ReadLine(), out localIPAddr))
-            {
-                Console.WriteLine("Incorect format");
-                count++;
-                if (count > 3)
-                {
-                    IPAddress.TryParse("0.0.0.0", out localIPAddr);
-                    Console.WriteLine("Usint server ip 0.0.0.0");
-                    break;
-                }
-            }
             IPAddress mcastAddress;
             Console.WriteLine("Enter mcast IP(224.168.100.2)");
             count = 0;
@@ -36,7 +23,7 @@ namespace TestProfitCenter
                     break;
                 }
             }
-            FinServer server = new FinServer(localIPAddr, mcastAddress);
+            FinServer server = new FinServer(mcastAddress);
             server.StartServer();
             Console.WriteLine("Press eny key for stop...");
             Console.ReadKey();

@@ -49,6 +49,8 @@ namespace TestProfitCenterClient
         }
         private void ClientThread()
         {
+            while (!rec_stop)
+                ReceiveBroadcastMessages();
             lock (locker)
             {
                 rec_stop = false;
@@ -56,15 +58,14 @@ namespace TestProfitCenterClient
         }
         private void ReceiveBroadcastMessages()
         {
-            byte[] bytes = new Byte[100];
-            IPEndPoint groupEP = new IPEndPoint(_mcastAddress, _mcastPort);
-            EndPoint remoteEP = (EndPoint)new IPEndPoint(IPAddress.Any, 0);  
+            
             while (!rec_stop)
             {
                 try
                 {
-                    mcastSocket.ReceiveFrom(bytes, ref remoteEP);
-                    var msg_str = Encoding.ASCII.GetString(bytes, 0, bytes.Length);
+                    byte[] bytes = new Byte[8096];
+                    mcastSocket.Receive(bytes);
+                    var msg_str = Encoding.UTF32.GetString(bytes, 0, bytes.Length);
                     if (msg_str != string.Empty)
                     {
                         var msg = Newtonsoft.Json.JsonConvert.DeserializeObject<Msg>(msg_str);
@@ -83,17 +84,11 @@ namespace TestProfitCenterClient
         {
             try
             {
-                // Create a multicast socket.
-                mcastSocket = new Socket(AddressFamily.InterNetwork,
-                                         SocketType.Dgram,
-                                         ProtocolType.Udp);
-                IPEndPoint IPlocal = new IPEndPoint(_addres, 0);
-                mcastSocket.Bind(IPlocal);
-                MulticastOption mcastOption;
-                mcastOption = new MulticastOption(_mcastAddress, _addres);
-                mcastSocket.SetSocketOption(SocketOptionLevel.IP,
-                                        SocketOptionName.AddMembership,
-                                        mcastOption);
+                mcastSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram,ProtocolType.Udp);
+                IPEndPoint ipep = new IPEndPoint(IPAddress.Any, _mcastPort);
+                mcastSocket.Bind(ipep);
+                mcastSocket.SetSocketOption(SocketOptionLevel.IP,SocketOptionName.AddMembership,
+                                            new MulticastOption(_mcastAddress, IPAddress.Any));
             }
             catch (Exception ex)
             {
